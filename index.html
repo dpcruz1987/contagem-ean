@@ -31,6 +31,7 @@
     .ok { background:#e8f5e9; }
     .bad { background:#ffebee; }
     #reader { width:100%; border-radius:12px; overflow:hidden; }
+    .tiny { font-size: 11px; opacity: .8; }
   </style>
 </head>
 
@@ -38,8 +39,8 @@
   <div class="card">
     <h1>📦 Contagem (EAN / QTD)</h1>
     <div class="muted">
-      Leia o EAN pela câmera, informe QTD e exporte CSV no formato: <b>EAN;QTD;</b><br/>
-      (No iPhone: abrir no <b>Safari</b> e permitir câmera.)
+      Leia o EAN pela câmera, informe QTD e exporte CSV: <b>EAN;QTD;</b><br/>
+      iPhone: abrir no <b>Safari</b> e permitir câmera.
     </div>
 
     <label>EAN</label>
@@ -66,8 +67,13 @@
 
       <div id="reader"></div>
 
-      <button class="secondary" id="btnStop">⏹️ Fechar câmera</button>
-      <div class="muted">Dica: boa iluminação e aproxime o código até focar.</div>
+      <div class="row">
+        <button class="ghost" id="btnTorch">🔦 Flash</button>
+        <button class="secondary" id="btnStop">⏹️ Fechar</button>
+      </div>
+
+      <div class="tiny" id="lastScan">Última leitura: (nenhuma)</div>
+      <div class="muted">Dica: aproxime até focar. Melhor em código EAN-13 grande e bem impresso.</div>
     </div>
   </div>
 
@@ -78,8 +84,7 @@
     <button class="ghost" id="btnClear">🧹 Limpar lista</button>
   </div>
 
-  <!-- Leitura de código de barras compatível com Safari/iPhone -->
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
