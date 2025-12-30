@@ -140,4 +140,116 @@ btnExport.addEventListener("click", () => {
 // ---------- Scanner ----------
 btnScan.addEventListener("click", async () => {
   if (!location.protocol.startsWith("https") && location.hostname !== "localhost") {
-    return alert("Para usar câmera, abra via HTTPS (GitHub Pages
+    return alert("Para usar câmera, abra via HTTPS (GitHub Pages resolve isso).");
+  }
+
+  cameraWrap.style.display = "block";
+  statusEl.textContent = "Abrindo câmera…";
+  statusEl.className = "pill ok";
+  lastScanEl.textContent = "Última leitura: (nenhuma)";
+  torchOn = false;
+  btnTorch.textContent = "🔦 Flash";
+
+  try {
+    if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+
+    // Config forte pra barcode no iPhone
+    const config = {
+      fps: 15,
+      qrbox: { width: 320, height: 320 }, // maior = melhor pra EAN
+      disableFlip: true,
+      // IMPORTANTE: força usar BarcodeDetector quando suportado (Safari iOS recentes)
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true
+      },
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39
+      ]
+    };
+
+    // start com traseira
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      onScanSuccess,
+      onScanFailure
+    );
+
+    statusEl.textContent = "Lendo… (aponte para o EAN)";
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = "Erro na câmera";
+    statusEl.className = "pill bad";
+    alert(
+      "A câmera abriu, mas o scanner não iniciou corretamente.\n\n" +
+      "Confirme:\n" +
+      "1) Safari (não WhatsApp/Instagram)\n" +
+      "2) Permitir câmera\n" +
+      "3) Boa iluminação\n\n" +
+      "Se quiser, me diga o modelo do iPhone e iOS (ex.: iPhone 13 / iOS 17) que eu ajusto fino."
+    );
+    cameraWrap.style.display = "none";
+  }
+});
+
+btnStop.addEventListener("click", stopCamera);
+
+// Flash (quando suportado)
+btnTorch.addEventListener("click", async () => {
+  try {
+    if (!html5QrCode || !html5QrCode.isScanning) return;
+
+    torchOn = !torchOn;
+    // Nem todo iPhone libera isso no browser, mas quando libera, ajuda MUITO
+    await html5QrCode.applyVideoConstraints({ advanced: [{ torch: torchOn }] });
+    btnTorch.textContent = torchOn ? "🔦 Flash ON" : "🔦 Flash";
+  } catch (e) {
+    console.warn("Torch não suportado:", e);
+    alert("Flash não suportado neste iPhone/navegador. Use boa iluminação.");
+    torchOn = false;
+    btnTorch.textContent = "🔦 Flash";
+  }
+});
+
+function onScanSuccess(decodedText) {
+  // Mostra a última tentativa (ajuda debug)
+  lastScanEl.textContent = `Última leitura: ${decodedText}`;
+
+  const ean = normalizeEAN(decodedText);
+
+  // EAN normalmente tem 8, 12, 13 ou 14 dígitos (UPC pode virar 12)
+  if (ean.length < 8) return;
+
+  // feedback
+  try { navigator.vibrate?.(50); } catch {}
+
+  eanInput.value = ean;
+  statusEl.textContent = "Capturado ✓";
+  // NÃO fecha instantâneo — dá 150ms pro Safari estabilizar
+  setTimeout(() => {
+    qtdInput.focus();
+    stopCamera();
+  }, 150);
+}
+
+function onScanFailure(_) {
+  // Não fazer nada — o scanner tenta continuamente.
+  // Se quiser, você pode mostrar "procurando..." mas isso costuma poluir no iPhone.
+}
+
+async function stopCamera() {
+  cameraWrap.style.display = "none";
+  try {
+    if (html5QrCode && html5QrCode.isScanning) {
+      await html5QrCode.stop();
+      await html5QrCode.clear();
+    }
+  } catch {}
+  torchOn = false;
+  btnTorch.textContent = "🔦 Flash";
+}
