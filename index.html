@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Contagem EAN/QTD</title>
+  <title>Cadastro de Clientes</title>
 
   <style>
     body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:16px; background:#f6f6f6; }
@@ -26,65 +26,41 @@
     .itemActions { display:flex; gap:8px; }
     .mini { width:auto; padding:8px 10px; font-size:13px; }
     .danger { background:#ffebee; }
-    #cameraWrap { display:none; }
-    .pill { display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; }
-    .ok { background:#e8f5e9; }
-    .bad { background:#ffebee; }
-    #reader { width:100%; border-radius:12px; overflow:hidden; }
-    .tiny { font-size: 11px; opacity: .8; }
   </style>
 </head>
 
 <body>
   <div class="card">
-    <h1>📦 Contagem (EAN / QTD)</h1>
+    <h1>👤 Cadastro de Clientes</h1>
     <div class="muted">
-      Leia o EAN pela câmera, informe QTD e exporte CSV: <b>EAN;QTD;</b><br/>
-      iPhone: abrir no <b>Safari</b> e permitir câmera.
+      Cadastre clientes com nome, e-mail e telefone. Os dados ficam salvos neste dispositivo.
     </div>
 
-    <label>EAN</label>
-    <input id="ean" inputmode="numeric" placeholder="Leia pela câmera ou digite" />
+    <label>Nome</label>
+    <input id="name" placeholder="Ex.: Maria Silva" autocomplete="name" />
 
     <div class="row">
       <div>
-        <label>QTD</label>
-        <input id="qtd" type="number" min="0" step="1" placeholder="Ex.: 1" />
+        <label>E-mail</label>
+        <input id="email" type="email" placeholder="maria@exemplo.com" autocomplete="email" />
       </div>
       <div>
-        <label>&nbsp;</label>
-        <button class="ghost" id="btnScan">📷 Ler EAN</button>
+        <label>Telefone</label>
+        <input id="phone" type="tel" placeholder="(11) 99999-0000" autocomplete="tel" />
       </div>
     </div>
 
     <button class="primary" id="btnAdd">➕ Adicionar</button>
-
-    <div id="cameraWrap" class="card" style="margin-top:12px;">
-      <div class="row" style="align-items:center;">
-        <h1 style="margin:0;">📷 Leitura</h1>
-        <div id="status" class="pill ok" style="text-align:center;">Lendo…</div>
-      </div>
-
-      <div id="reader"></div>
-
-      <div class="row">
-        <button class="ghost" id="btnTorch">🔦 Flash</button>
-        <button class="secondary" id="btnStop">⏹️ Fechar</button>
-      </div>
-
-      <div class="tiny" id="lastScan">Última leitura: (nenhuma)</div>
-      <div class="muted">Dica: aproxime até focar. Melhor em código EAN-13 grande e bem impresso.</div>
-    </div>
+    <button class="ghost" id="btnCancel" style="display:none;">↩️ Cancelar edição</button>
   </div>
 
   <div class="card">
-    <h1>🧾 Itens</h1>
+    <h1>🧾 Clientes</h1>
     <div id="list" class="list"></div>
     <button class="secondary" id="btnExport">⬇️ Exportar CSV</button>
     <button class="ghost" id="btnClear">🧹 Limpar lista</button>
   </div>
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
