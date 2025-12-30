@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Contagem - EAN/QTD</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#FF0013">
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 16px; background: #f6f6f6; }
+    .card { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.06); margin-bottom: 12px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    label { display:block; font-size: 12px; opacity:.8; margin: 10px 0 6px; }
+    input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
+    button { width: 100%; padding: 12px; border: 0; border-radius: 10px; font-size: 16px; margin-top: 10px; cursor: pointer; }
+    .primary { background: #FF0013; color: #fff; }
+    .secondary { background: #3A3A3A; color: #fff; }
+    .ghost { background: #eee; }
+    .row { display:flex; gap:10px; }
+    .row > * { flex: 1; }
+    #cameraWrap { display:none; }
+    video { width: 100%; border-radius: 12px; background:#000; }
+    .list { display:flex; flex-direction:column; gap:8px; }
+    .item { display:flex; justify-content:space-between; align-items:center; gap:10px; padding: 10px; border-radius: 12px; background:#fafafa; border:1px solid #eee; }
+    .item strong { font-size: 14px; }
+    .item small { opacity:.75; }
+    .itemActions { display:flex; gap:8px; }
+    .mini { width:auto; padding: 8px 10px; font-size: 13px; }
+    .danger { background:#ffebee; }
+    .muted { opacity:.7; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📦 Contagem (EAN / QTD)</h1>
+    <div class="muted">Ler código de barras → informar QTD → adicionar → exportar CSV.</div>
+
+    <label>EAN</label>
+    <input id="ean" inputmode="numeric" placeholder="Aponte a câmera ou digite o EAN" />
+
+    <div class="row">
+      <div>
+        <label>QTD</label>
+        <input id="qtd" type="number" min="0" step="1" placeholder="Ex.: 1" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="ghost" id="btnScan">📷 Ler EAN</button>
+      </div>
+    </div>
+
+    <button class="primary" id="btnAdd">➕ Adicionar</button>
+
+    <div id="cameraWrap" class="card" style="margin-top:12px;">
+      <h1>📷 Leitura</h1>
+      <video id="video" playsinline></video>
+      <button class="secondary" id="btnStop">⏹️ Fechar câmera</button>
+      <div class="muted">Dica: boa iluminação e aproxime o código até ficar nítido.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h1>🧾 Itens</h1>
+    <div id="list" class="list"></div>
+    <button class="secondary" id="btnExport">⬇️ Exportar CSV</button>
+    <button class="ghost" id="btnClear">🧹 Limpar lista</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
