@@ -9,7 +9,7 @@
     body { font-family: Arial, Helvetica, sans-serif; margin:0; padding:16px; background:#f6f6f6; }
     .card { background:#fff; border-radius:14px; padding:14px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin-bottom:12px; }
     h1 { font-size:18px; margin:0 0 8px; }
-    .muted { opacity:.75; font-size:12px; line-height: 1.35; }
+    .muted { opacity:.75; font-size:12px; line-height:1.35; }
     label { display:block; font-size:12px; opacity:.8; margin:10px 0 6px; }
     input { width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; font-size:16px; }
     button { width:100%; padding:12px; border:0; border-radius:10px; font-size:16px; margin-top:10px; cursor:pointer; }
@@ -18,6 +18,7 @@
     .ghost { background:#eee; }
     .row { display:flex; gap:10px; }
     .row > * { flex:1; }
+
     .list { display:flex; flex-direction:column; gap:8px; }
     .item { display:flex; justify-content:space-between; align-items:center; gap:10px;
             padding:10px; border-radius:12px; background:#fafafa; border:1px solid #eee; }
@@ -26,12 +27,42 @@
     .itemActions { display:flex; gap:8px; }
     .mini { width:auto; padding:8px 10px; font-size:13px; }
     .danger { background:#ffebee; }
+
     #cameraWrap { display:none; }
     .pill { display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; }
     .ok { background:#e8f5e9; }
     .bad { background:#ffebee; }
-    #reader { width:100%; border-radius:12px; overflow:hidden; }
-    .tiny { font-size: 11px; opacity: .8; }
+
+    /* Área da câmera */
+    #scanner {
+      position: relative;
+      width: 100%;
+      height: 360px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* A quagga injeta um <video> aqui dentro */
+    #scanner video, #scanner canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Moldura/retículo */
+    .frame {
+      position: absolute;
+      inset: 18px;
+      border: 2px solid rgba(255,255,255,0.9);
+      border-radius: 10px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+
+    .tips { font-size: 11px; opacity: .8; margin-top: 8px; line-height: 1.35; }
   </style>
 </head>
 
@@ -62,18 +93,24 @@
     <div id="cameraWrap" class="card" style="margin-top:12px;">
       <div class="row" style="align-items:center;">
         <h1 style="margin:0;">📷 Leitura</h1>
-        <div id="status" class="pill ok" style="text-align:center;">Lendo…</div>
+        <div id="status" class="pill ok" style="text-align:center;">Abrindo…</div>
       </div>
 
-      <div id="reader"></div>
+      <div id="scanner">
+        <div class="frame"></div>
+      </div>
 
       <div class="row">
-        <button class="ghost" id="btnTorch">🔦 Flash</button>
         <button class="secondary" id="btnStop">⏹️ Fechar</button>
+        <button class="ghost" id="btnRetry">🔁 Recarregar</button>
       </div>
 
-      <div class="tiny" id="lastScan">Última leitura: (nenhuma)</div>
-      <div class="muted">Dica: aproxime até focar. Melhor em código EAN-13 grande e bem impresso.</div>
+      <div class="tips">
+        Dicas pra iPhone ler EAN rápido:
+        <br/>• deixe o código <b>reto</b> (evite muito inclinado)
+        <br/>• aproxime até ficar bem nítido (sem tremor)
+        <br/>• evite reflexo (mude o ângulo da luz)
+      </div>
     </div>
   </div>
 
@@ -84,7 +121,8 @@
     <button class="ghost" id="btnClear">🧹 Limpar lista</button>
   </div>
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="app.js?v=4"></script>
+  <!-- Quagga2 (motor forte para EAN/UPC) -->
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
