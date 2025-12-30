@@ -1,6 +1,3 @@
-/* Contagem EAN/QTD - MVP PWA
-   CSV: EAN;QTD; (com ; no final)
-*/
 const $ = (id) => document.getElementById(id);
 
 const eanInput = $("ean");
@@ -14,32 +11,27 @@ const btnExport = $("btnExport");
 const btnClear = $("btnClear");
 
 const cameraWrap = $("cameraWrap");
-const video = $("video");
+const statusEl = $("status");
 
-let stream = null;
-let scanning = false;
-
-// --- Storage ---
 const STORAGE_KEY = "contagem_ean_qtd_v1";
 let items = loadItems();
-render();
+
+// Scanner (html5-qrcode)
+let html5QrCode = null;
 
 function loadItems() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+  catch { return []; }
 }
+
 function saveItems() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 }
 
-// --- Helpers ---
 function normalizeEAN(v) {
   return String(v || "").trim().replace(/\s+/g, "");
 }
+
 function parseQtd(v) {
   const n = Number(v);
   if (!Number.isFinite(n) || n < 0) return null;
@@ -48,11 +40,9 @@ function parseQtd(v) {
 
 function upsertItem(ean, qtd) {
   const idx = items.findIndex((x) => x.ean === ean);
-  if (idx >= 0) {
-    items[idx].qtd = qtd; // aqui é "setar" quantidade
-  } else {
-    items.push({ ean, qtd });
-  }
+  if (idx >= 0) items[idx].qtd = qtd;
+  else items.push({ ean, qtd });
+
   saveItems();
   render();
 }
@@ -70,8 +60,7 @@ function render() {
     return;
   }
 
-  // ordena por EAN pra ficar organizado
-  const sorted = [...items].sort((a, b) => a.ean.localeCompare(b.ean));
+  const sorted = [...items].sort((a,b) => a.ean.localeCompare(b.ean));
 
   for (const it of sorted) {
     const row = document.createElement("div");
@@ -89,10 +78,10 @@ function render() {
     listEl.appendChild(row);
   }
 
-  // bind actions
   listEl.querySelectorAll("[data-del]").forEach((b) => {
     b.addEventListener("click", () => removeItem(b.getAttribute("data-del")));
   });
+
   listEl.querySelectorAll("[data-edit]").forEach((b) => {
     b.addEventListener("click", () => {
       const ean = b.getAttribute("data-edit");
@@ -105,7 +94,9 @@ function render() {
   });
 }
 
-// --- Add item ---
+render();
+
+// Adicionar
 btnAdd.addEventListener("click", () => {
   const ean = normalizeEAN(eanInput.value);
   const qtd = parseQtd(qtdInput.value);
@@ -115,13 +106,12 @@ btnAdd.addEventListener("click", () => {
 
   upsertItem(ean, qtd);
 
-  // prepara pro próximo
   eanInput.value = "";
   qtdInput.value = "";
   eanInput.focus();
 });
 
-// --- Clear ---
+// Limpar lista
 btnClear.addEventListener("click", () => {
   if (!confirm("Limpar todos os itens?")) return;
   items = [];
@@ -129,16 +119,12 @@ btnClear.addEventListener("click", () => {
   render();
 });
 
-// --- Export CSV ---
+// Exportar CSV (cabeçalho + ; no final das linhas)
 btnExport.addEventListener("click", () => {
-  const rows = [];
-  rows.push("EAN;QTD;");
+  const rows = ["EAN;QTD;"];
+  const sorted = [...items].sort((a,b) => a.ean.localeCompare(b.ean));
 
-  // usar ordem atual (ordenada) só no export
-  const sorted = [...items].sort((a, b) => a.ean.localeCompare(b.ean));
-  for (const it of sorted) {
-    rows.push(`${it.ean};${it.qtd};`);
-  }
+  for (const it of sorted) rows.push(`${it.ean};${it.qtd};`);
 
   const csv = rows.join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -154,75 +140,73 @@ btnExport.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
-// --- Barcode scanning ---
-// Usa BarcodeDetector se disponível; caso não, avisa (MVP). Se você quiser, eu te mando a versão com fallback ZXing.
+// Abrir scanner (iPhone friendly)
 btnScan.addEventListener("click", async () => {
-  if (!("mediaDevices" in navigator) || !navigator.mediaDevices.getUserMedia) {
-    return alert("Seu navegador não suporta câmera.");
+  if (!location.protocol.startsWith("https") && location.hostname !== "localhost") {
+    return alert("Para usar câmera, abra via HTTPS (GitHub Pages resolve isso).");
   }
 
-  // BarcodeDetector (Chrome/Android costuma suportar bem)
-  if (!("BarcodeDetector" in window)) {
-    return alert("Leitura por câmera não suportada neste navegador. Me diga se o seu celular é iPhone ou Android que eu te mando a versão com fallback (ZXing).");
-  }
+  cameraWrap.style.display = "block";
+  statusEl.textContent = "Lendo…";
+  statusEl.className = "pill ok";
 
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false,
-    });
-    video.srcObject = stream;
-    await video.play();
+    // cria 1x
+    if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
 
-    cameraWrap.style.display = "block";
-    scanning = true;
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      // formatos suportados (não travar se algum não existir em certos browsers)
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39
+      ]
+    };
 
-    const detector = new BarcodeDetector({
-      formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"]
-    });
-
-    scanLoop(detector);
-  } catch (err) {
-    console.error(err);
-    alert("Não foi possível acessar a câmera. Verifique permissões.");
-  }
-});
-
-btnStop.addEventListener("click", stopCamera);
-
-function stopCamera() {
-  scanning = false;
-  cameraWrap.style.display = "none";
-  if (stream) {
-    stream.getTracks().forEach((t) => t.stop());
-    stream = null;
-  }
-}
-
-async function scanLoop(detector) {
-  while (scanning) {
-    try {
-      const barcodes = await detector.detect(video);
-      if (barcodes && barcodes.length) {
-        const raw = barcodes[0].rawValue || "";
-        const ean = normalizeEAN(raw);
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => {
+        const ean = normalizeEAN(decodedText);
         if (ean) {
           eanInput.value = ean;
           qtdInput.focus();
+          statusEl.textContent = "Capturado ✓";
           stopCamera();
-          break;
         }
-      }
-    } catch (e) {
-      // ignora e segue
-    }
-    await new Promise((r) => setTimeout(r, 150));
-  }
-}
+      },
+      () => {} // ignora erros contínuos (normal durante scan)
+    );
 
-// --- Register service worker ---
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
-  });
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = "Erro na câmera";
+    statusEl.className = "pill bad";
+    alert(
+      "Não foi possível abrir a câmera.\n\n" +
+      "Confirme:\n" +
+      "1) Você abriu no SAFARI (não no WhatsApp/Instagram)\n" +
+      "2) Permitiu câmera quando o iPhone pediu\n" +
+      "3) Ajustes > Safari > Câmera = Permitir"
+    );
+    cameraWrap.style.display = "none";
+  }
+});
+
+// Fechar scanner
+btnStop.addEventListener("click", stopCamera);
+
+async function stopCamera() {
+  cameraWrap.style.display = "none";
+  try {
+    if (html5QrCode && html5QrCode.isScanning) {
+      await html5QrCode.stop();
+      await html5QrCode.clear();
+    }
+  } catch {}
 }
